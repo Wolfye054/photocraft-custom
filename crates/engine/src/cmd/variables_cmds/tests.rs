@@ -895,3 +895,20 @@ fn export_data_sets_naming_rejects_unknown_and_empty_names() {
     assert_eq!(r["files"], json!([format!("{dir}/001-{{name.png"), format!("{dir}/002-{{name.png")]));
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn data_set_commands_require_data_sets_to_be_enabled() {
+    let mut s = Session::new();
+    assert!(!s.is_enabled("file.export.dataSetsAsFiles"));
+    assert!(!s.is_enabled("image.applyDataSet"));
+
+    s.execute("file.new", json!({"width": 64, "height": 64})).unwrap();
+    // Document exists but has no data sets: commands remain disabled
+    assert!(!s.is_enabled("file.export.dataSetsAsFiles"));
+    assert!(!s.is_enabled("image.applyDataSet"));
+
+    // Once data sets are defined, commands become enabled
+    s.execute("image.variables.dataSets", json!({"dataSets": [{"name": "Set 1", "values": []}]})).unwrap();
+    assert!(s.is_enabled("file.export.dataSetsAsFiles"));
+    assert!(s.is_enabled("image.applyDataSet"));
+}

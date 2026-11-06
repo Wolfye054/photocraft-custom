@@ -41,6 +41,7 @@ fn artboards_to_files_folder_is_chosen_with_browse() {
 fn data_sets_as_files_folder_is_chosen_with_browse() {
     let (mut h, asked) = harness(vec![Some(FileDialogAnswer::FolderTo("/tmp/sets".into()))]);
     h.state_mut().run("file.new", json!({"width": 64, "height": 64})).unwrap();
+    h.state_mut().run("image.variables.dataSets", json!({"dataSets": [{"name": "Set 1", "values": []}]})).unwrap();
     h.state_mut().sync_views();
     let ctx = h.ctx.clone();
     let r = crate::menus::invoke(h.state_mut(), &ctx, "file.export.dataSetsAsFiles", json!({})).unwrap();

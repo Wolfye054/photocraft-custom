@@ -23,6 +23,14 @@ fn has_doc(s: &Session) -> std::result::Result<(), String> {
     s.active().map(|_| ()).ok_or_else(|| "no document".into())
 }
 
+fn has_data_sets(s: &Session) -> std::result::Result<(), String> {
+    let st = s.active().ok_or_else(|| "no document".to_string())?;
+    if st.doc.variables.data_sets.is_empty() {
+        return Err("no data sets in document".into());
+    }
+    Ok(())
+}
+
 fn bad(cmd: &str, msg: impl Into<String>) -> EngineError {
     EngineError::BadParams { cmd: cmd.into(), msg: msg.into() }
 }
@@ -670,6 +678,9 @@ macro_rules! spec {
     ($id:expr, $label:expr, $menu:expr, $params:expr, $run:expr) => {
         CommandSpec { id: $id, label: $label, menu: $menu, shortcut: None, params: $params, enabled: has_doc, journal: true, run: $run }
     };
+    ($id:expr, $label:expr, $menu:expr, $params:expr, $enabled:expr, $run:expr) => {
+        CommandSpec { id: $id, label: $label, menu: $menu, shortcut: None, params: $params, enabled: $enabled, journal: true, run: $run }
+    };
 }
 
 pub fn specs() -> Vec<CommandSpec> {
@@ -693,6 +704,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Apply Data Set…",
             &["Image"],
             "{name|index} → {applied, index}: sets layer visibility/text/pixels from the data set (one history step)",
+            has_data_sets,
             |s, p| apply_data_set(s, p)
         ),
         spec!(
@@ -707,6 +719,7 @@ pub fn specs() -> Vec<CommandSpec> {
             "Data Sets as Files…",
             &["File", "Export"],
             "{dir, format?:png, dataSets?[names], naming?:\"{name}|{index}|{document}|{Variable}\"} → {files,count}: apply each data set and export the flattened document. `naming` (default `{name}`) puts together each file's name: `{name}` the data set's name, `{index}` its 001-based number, `{document}` the document's name, and any other `{Variable}` that variable's value in the data set, e.g. `{Name}-{Level}`. Colliding filenames are rejected before writing (include {index} to disambiguate)",
+            has_data_sets,
             |s, p| export_as_files(s, p)
         ),
         CommandSpec {
